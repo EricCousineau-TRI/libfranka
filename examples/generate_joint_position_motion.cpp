@@ -50,8 +50,8 @@ class FirstOrderHold {
 
   void Update(double tf, double u, bool print = false) {
     if (print) std::cout << "update: " << tf << std::endl;
+
     if (tf + kEps >= ts_next_) {
-      if (print) std::cout << "  store" << std::endl;
       // Get first order.
       ts_prev_ = ts_;
       x_ts_prev_ = x_ts_;
@@ -60,7 +60,9 @@ class FirstOrderHold {
       x_ts_ = u;
       // Schedule next update.
       ts_next_ += dt_ts_;
+      if (print) std::cout << "  store, ts_next = " << ts_next_ << std::endl;
     } else {
+      std::cout << "  crap  " << (tf + kEps) - ts_next_ << "\n";
       assert(false);
     }
   }
@@ -126,7 +128,7 @@ int main(int argc, char** argv) {
     double time_slow = 0.0;
     const int frame_delta = 1;
     int frame_count = 0;
-    const double T = 5.0;
+    const double T = 1.0;
 
     const double freq_slow = 1000.0 / frame_delta;
     const double dt_ts = 1.0 / freq_slow;
@@ -149,7 +151,7 @@ int main(int argc, char** argv) {
         initial_position = robot_state.q_d;
       }
 
-      double delta_angle = M_PI / 12.0 * (1 - std::cos(2 * M_PI / T * time_slow));
+      double delta_angle = M_PI / 12.0 / 5 * (1 - std::cos(2 * M_PI / T * time_slow));
 
       franka::JointPositions output = {{initial_position[0], initial_position[1],
                                         initial_position[2],
@@ -174,7 +176,7 @@ int main(int argc, char** argv) {
       // }
 
       for (int i = 0; i < 7; ++i) {
-        const bool print = (i == 3);
+        const bool print = true; //(i == 3);
         foh[i].Update(time_fast, output.q[i], print);
         const double tmp = foh[i].CalcOutput(time_fast, print);
         if (print) {
@@ -182,9 +184,10 @@ int main(int argc, char** argv) {
               << "  actual: " << output.q[i] << "\n"
               << "  foh: " << tmp << "\n";
         }
-        output.q[i] = tmp;
+        // output.q[i] = tmp;
       }
 
+      std::cout << "---\n";
       if (time_slow >= T) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
         return franka::MotionFinished(output);
