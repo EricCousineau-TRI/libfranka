@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     std::array<double, 7> initial_position;
     double time_fast = 0.0;
     double time_slow = 0.0;
-    const int frame_delta = 5;
+    const int frame_delta = 1;
     int frame_count = 0;
     const double T = 5.0;
 
@@ -162,11 +162,11 @@ int main(int argc, char** argv) {
       //       robot_state.ddq_d[i]);
       // }
 
-      for (int i = 0; i < 7; ++i) {
-        const bool print = (i == 0);
-        foh[i].Update(time_fast, output.q[i], print);
-        output.q[i] = foh[i].CalcOutput(time_fast);
-      }
+      // for (int i = 0; i < 7; ++i) {
+      //   const bool print = (i == 0);
+      //   foh[i].Update(time_fast, output.q[i], print);
+      //   output.q[i] = foh[i].CalcOutput(time_fast);
+      // }
 
       if (time_slow >= T * 4) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
