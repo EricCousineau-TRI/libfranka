@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
         output.q[i] = tmp;
       }
 
-      if (time_slow >= T * 4) {
+      if (time_slow >= T) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
         return franka::MotionFinished(output);
       }
