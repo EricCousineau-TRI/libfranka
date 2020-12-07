@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <franka/exception.h>
+#include <franka/rate_limiting.h>
 #include <franka/robot.h>
 
 #include "examples_common.h"
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
     std::array<double, 7> initial_position;
     double time_high_rate = 0.0;
     double time = 0.0;
-    const int frame_delta = 5;
+    const int frame_delta = 1;
     int frame_count = 0;
     const double T = 5.0;
 
@@ -72,6 +73,21 @@ int main(int argc, char** argv) {
                                         initial_position[4] + delta_angle, initial_position[5],
                                         initial_position[6] + delta_angle}};
 
+      // Hack in rate limit.
+      for (int i = 0; i < 7; ++i) {
+        const double max_vel = 2;
+        const double max_accel = 30;
+        const double max_jerk = 10000;
+        output.q[i] = franka::limitRate(
+            max_vel,
+            max_accel,
+            max_jerk,
+            output.q[i],
+            robot_state.q_d[i],
+            robot_state.dq_d[i],
+            robot_state.ddq_d[i]);
+      }
+
       if (time >= T * 4) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
         return franka::MotionFinished(output);
@@ -80,9 +96,9 @@ int main(int argc, char** argv) {
     };
     const franka::ControllerMode controller_mode =
         franka::ControllerMode::kJointImpedance;
-    const bool limit_rate = true;
-    const double cutoff_freq = 1;
-    robot.control(position_callback, controller_mode, limit_rate, cutoff_freq);
+    // const bool limit_rate = true;
+    // const double cutoff_freq = 1;
+    robot.control(position_callback, controller_mode); //, limit_rate, cutoff_freq);
   } catch (const franka::Exception& e) {
     std::cout << e.what() << std::endl;
     return -1;
