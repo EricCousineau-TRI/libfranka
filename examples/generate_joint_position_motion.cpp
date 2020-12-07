@@ -153,9 +153,9 @@ int main(int argc, char** argv) {
       franka::JointPositions output = {{initial_position[0], initial_position[1],
                                         initial_position[2],
                                         initial_position[3] + delta_angle,
-                                        initial_position[4] + delta_angle,
+                                        initial_position[4],// + delta_angle,
                                         initial_position[5],
-                                        initial_position[6] + delta_angle}};
+                                        initial_position[6]}};// + delta_angle}};
 
       // // Hack in rate limit.
       // for (int i = 0; i < 7; ++i) {
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
       // }
 
       for (int i = 0; i < 7; ++i) {
-        const bool print = (i == 4);
+        const bool print = (i == 3);
         foh[i].Update(time_fast, output.q[i], print);
         const double tmp = foh[i].CalcOutput(time_fast, print);
         if (print) {
