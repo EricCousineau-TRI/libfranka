@@ -34,6 +34,10 @@ Robot& Robot::operator=(Robot&& other) noexcept {
   return *this;
 }
 
+std::vector<Record> Robot::flushLog() {
+  return impl_->flushLog();
+}
+
 Robot::ServerVersion Robot::serverVersion() const noexcept {
   return impl_->serverVersion();
 }

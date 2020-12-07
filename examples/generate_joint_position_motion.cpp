@@ -3,6 +3,7 @@
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <limits>
 
 #include <franka/exception.h>
@@ -195,6 +196,15 @@ int main(int argc, char** argv) {
     // const bool limit_rate = true;
     // const double cutoftf_freq = 1;
     robot.control(position_callback, controller_mode); //, limit_rate, cutoftf_freq);
+
+    // I can haz log.
+    const std::string log_file = "/tmp/panda.log";
+    {
+      std::ofstream log_stream(log_file.c_str());
+      log_stream << franka::logToCSV(robot.flushLog());
+    }
+    std::cout << "Wrote log: " << log_file << "\n";
+
   } catch (const franka::Exception& e) {
     std::cout << e.what() << std::endl;
     return -1;

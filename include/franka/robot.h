@@ -6,10 +6,12 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include <franka/command_types.h>
 #include <franka/control_types.h>
 #include <franka/duration.h>
+#include <franka/log.h>
 #include <franka/lowpass_filter.h>
 #include <franka/robot_state.h>
 
@@ -60,7 +62,7 @@ class Robot {
    */
   explicit Robot(const std::string& franka_address,
                  RealtimeConfig realtime_config = RealtimeConfig::kEnforce,
-                 size_t log_size = 50);
+                 size_t log_size = 10000);
 
   /**
    * Move-constructs a new Robot instance.
@@ -82,6 +84,8 @@ class Robot {
    * Closes the connection.
    */
   ~Robot() noexcept;
+
+  std::vector<Record> flushLog();
 
   /**
    * @name Motion generation and joint-level torque commands
