@@ -47,33 +47,38 @@ class FirstOrderHold {
   }
 
   void Update(double tf, double u, bool print = false) {
-    if (print) std::cout << "update: " << tf << std::endl;
-    if (tf >= ts_next_) {
-      if (print) std::cout << "  store" << std::endl;
-      // Get first order.
-      ts_prev_ = ts_;
-      x_ts_prev_ = x_ts_;
-      // Get zero-th order.
-      ts_ = tf;
-      x_ts_ = u;
-      // Schedule next update.
-      ts_next_ += dt_ts_;
-    }
+    (void)tf;
+    (void)print;
+    x_ts_ = u;
+    // if (print) std::cout << "update: " << tf << std::endl;
+    // if (tf >= ts_next_) {
+    //   if (print) std::cout << "  store" << std::endl;
+    //   // Get first order.
+    //   ts_prev_ = ts_;
+    //   x_ts_prev_ = x_ts_;
+    //   // Get zero-th order.
+    //   ts_ = tf;
+    //   x_ts_ = u;
+    //   // Schedule next update.
+    //   ts_next_ += dt_ts_;
+    // }
   }
 
   double CalcOutput(double tf) const {
-    // Update must be called before output. (Deviates from Drake in
-    // this respect).
-    assert(!isnan(ts_));
-    assert(!isnan(x_ts_));
-    if (isnan(ts_prev_)) {
-      assert(isnan(x_ts_prev_));
-      return x_ts_;
-    } else {
-      assert(!isnan(x_ts_prev_));
-      assert(tf >= ts_);
-      return x_ts_prev_ + (tf - ts_) / dt_ts_ * (x_ts_ - x_ts_prev_);
-    }
+    (void)tf;
+    return x_ts_;
+    // // Update must be called before output. (Deviates from Drake in
+    // // this respect).
+    // assert(!isnan(ts_));
+    // assert(!isnan(x_ts_));
+    // if (isnan(ts_prev_)) {
+    //   assert(isnan(x_ts_prev_));
+    //   return x_ts_;
+    // } else {
+    //   assert(!isnan(x_ts_prev_));
+    //   assert(tf >= ts_);
+    //   return x_ts_prev_ + (tf - ts_) / dt_ts_ * (x_ts_ - x_ts_prev_);
+    // }
   }
 
  private:
@@ -143,8 +148,10 @@ int main(int argc, char** argv) {
       double delta_angle = M_PI / 12.0 * (1 - std::cos(2 * M_PI / T * time_slow));
 
       franka::JointPositions output = {{initial_position[0], initial_position[1],
-                                        initial_position[2], initial_position[3] + delta_angle,
-                                        initial_position[4] + delta_angle, initial_position[5],
+                                        initial_position[2],
+                                        initial_position[3] + delta_angle,
+                                        initial_position[4] + delta_angle,
+                                        initial_position[5],
                                         initial_position[6] + delta_angle}};
 
       // // Hack in rate limit.
@@ -162,11 +169,17 @@ int main(int argc, char** argv) {
       //       robot_state.ddq_d[i]);
       // }
 
-      // for (int i = 0; i < 7; ++i) {
-      //   const bool print = (i == 0);
-      //   foh[i].Update(time_fast, output.q[i], print);
-      //   output.q[i] = foh[i].CalcOutput(time_fast);
-      // }
+      for (int i = 0; i < 7; ++i) {
+        const bool print = (i == 4);
+        foh[i].Update(time_fast, output.q[i], print);
+        const double tmp = foh[i].CalcOutput(time_fast);
+        if (print) {
+          std::cout << "q[" << i << "]\n"
+              << "  actual: " << output.q[i] << "\n"
+              << "  foh: " << tmp << "\n";
+        }
+        output.q[i] = tmp;
+      }
 
       if (time_slow >= T * 4) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
