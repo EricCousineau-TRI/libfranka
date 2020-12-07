@@ -20,6 +20,7 @@
 
 const double kNaN = std::numeric_limits<double>::quiet_NaN();
 using std::isnan;
+const double kEps = 1e-6;
 
 /*
 Inputs (slow_freq):
@@ -47,38 +48,40 @@ class FirstOrderHold {
   }
 
   void Update(double tf, double u, bool print = false) {
-    (void)tf;
-    (void)print;
-    x_ts_ = u;
-    // if (print) std::cout << "update: " << tf << std::endl;
-    // if (tf >= ts_next_) {
-    //   if (print) std::cout << "  store" << std::endl;
-    //   // Get first order.
-    //   ts_prev_ = ts_;
-    //   x_ts_prev_ = x_ts_;
-    //   // Get zero-th order.
-    //   ts_ = tf;
-    //   x_ts_ = u;
-    //   // Schedule next update.
-    //   ts_next_ += dt_ts_;
-    // }
+    if (print) std::cout << "update: " << tf << std::endl;
+    if (tf + kEps >= ts_next_) {
+      if (print) std::cout << "  store" << std::endl;
+      // Get first order.
+      ts_prev_ = ts_;
+      x_ts_prev_ = x_ts_;
+      // Get zero-th order.
+      ts_ = tf;
+      x_ts_ = u;
+      // Schedule next update.
+      ts_next_ += dt_ts_;
+    } else {
+      assert(false);
+    }
   }
 
-  double CalcOutput(double tf) const {
-    (void)tf;
-    return x_ts_;
-    // // Update must be called before output. (Deviates from Drake in
-    // // this respect).
-    // assert(!isnan(ts_));
-    // assert(!isnan(x_ts_));
-    // if (isnan(ts_prev_)) {
-    //   assert(isnan(x_ts_prev_));
-    //   return x_ts_;
-    // } else {
-    //   assert(!isnan(x_ts_prev_));
-    //   assert(tf >= ts_);
-    //   return x_ts_prev_ + (tf - ts_) / dt_ts_ * (x_ts_ - x_ts_prev_);
-    // }
+  double CalcOutput(double tf, bool print = false) const {
+    // Update must be called before output. (Deviates from Drake in
+    // this respect).
+    assert(!isnan(ts_));
+    assert(!isnan(x_ts_));
+    if (isnan(ts_prev_)) {
+      assert(isnan(x_ts_prev_));
+      return x_ts_;
+    } else {
+      assert(!isnan(x_ts_prev_));
+      assert(tf >= ts_);
+      double blend = (tf - ts_) / dt_ts_;
+      if (print) std::cout << "blend: " << blend << "\n";
+      const double y = x_ts_prev_ + blend * (x_ts_ - x_ts_prev_);
+      assert(blend == 0.0);
+      assert(y == x_ts_prev_);
+      return y;
+    }
   }
 
  private:
@@ -172,7 +175,7 @@ int main(int argc, char** argv) {
       for (int i = 0; i < 7; ++i) {
         const bool print = (i == 4);
         foh[i].Update(time_fast, output.q[i], print);
-        const double tmp = foh[i].CalcOutput(time_fast);
+        const double tmp = foh[i].CalcOutput(time_fast, print);
         if (print) {
           std::cout << "q[" << i << "]\n"
               << "  actual: " << output.q[i] << "\n"
