@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     double time_slow = 0.0;
     const int frame_delta = 1;
     int frame_count = 0;
-    const double T = 1.0;
+    const double T = 5.0;
 
     const double freq_slow = 1000.0 / frame_delta;
     const double dt_ts = 1.0 / freq_slow;
