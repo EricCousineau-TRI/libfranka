@@ -45,12 +45,13 @@ int main(int argc, char** argv) {
     std::array<double, 7> initial_position;
     double time_high_rate = 0.0;
     double time = 0.0;
-    const int frame_delta = 1;
+    const int frame_delta = 5;
     int frame_count = 0;
     const double T = 5.0;
-    robot.control(
+
+    auto position_callback =
         [&](const franka::RobotState& robot_state, franka::Duration period)
-        -> franka::JointPositions {
+          -> franka::JointPositions {
       time_high_rate += period.toSec();
       if (frame_count % frame_delta == 0) {
         time = time_high_rate;
@@ -76,7 +77,12 @@ int main(int argc, char** argv) {
         return franka::MotionFinished(output);
       }
       return output;
-    });
+    };
+    const franka::ControllerMode controller_mode =
+        franka::ControllerMode::kJointImpedance;
+    const bool limit_rate = true;
+    const double cutoff_freq = 1;
+    robot.control(position_callback, controller_mode, limit_rate, cutoff_freq);
   } catch (const franka::Exception& e) {
     std::cout << e.what() << std::endl;
     return -1;
