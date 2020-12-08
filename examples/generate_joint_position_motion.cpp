@@ -26,39 +26,39 @@ const double kEps = 1e-6;
 
 /*
 Inputs (slow_freq):
-  u[ts]
+  u[t_slow]
 
 State (slow_freq):
-  x[ts_prev], x[ts]
+  x[t_slow_prev], x[t_slow]
 
 Output (high_freq):
   if any uninitialized x:
-    y[tf] = x[ts]
+    y[t_fast] = x[t_slow]
   else:
-    y[tf] = x[ts_prev] + (tf - ts) / dt_ts * (x[ts] - x[ts_prev])
+    y[t_fast] = x[t_slow_prev] + (t_fast - t_slow) / dt_slow * (x[t_slow] - x[t_slow_prev])
 
-dt_ts - Slow frequency (seconds)
+dt_slow - Slow frequency (seconds)
 dt_f - Fast frequency (seconds)
-ts[n] - Time at slow frequency
-tf[n] - Time at fast frequency
+t_slow[n] - Time at slow frequency
+t_fast[n] - Time at fast frequency
 */
 class FirstOrderHold {
  public:
-  FirstOrderHold(double dt_ts)
-      : dt_ts_(dt_ts) {
-    ts_next_ = 0.0;
+  FirstOrderHold(double dt_slow)
+      : dt_slow_(dt_slow) {
+    t_slow_next_ = 0.0;
   }
 
-  void Update(double tf, double u) {
-    // if (tf + kEps >= ts_next_) {
+  void Update(double t_fast, double u) {
+    // if (t_fast + kEps >= t_slow_next_) {
       // Get first order.
-      ts_prev_ = ts_;
-      x_ts_prev_ = x_ts_;
+      t_slow_prev_ = t_slow_;
+      x_t_slow_prev_ = x_t_slow_;
       // Get zero-th order.
-      ts_ = tf;
-      x_ts_ = u;
+      t_slow_ = t_fast;
+      x_t_slow_ = u;
       // Schedule next update.
-      ts_next_ += dt_ts_;
+      t_slow_next_ += dt_slow_;
       count_ += 1;
     // } else {
     //   // hack!
@@ -66,36 +66,36 @@ class FirstOrderHold {
     // }
   }
 
-  double CalcOutput(double tf) const {
+  double CalcOutput(double t_fast) const {
     // Update must be called before output. (Deviates from Drake in
     // this respect).
-    assert(!isnan(ts_) && !isnan(x_ts_));
+    assert(!isnan(t_slow_) && !isnan(x_t_slow_));
     assert(count_ > 0);
     if (count_ == 1) {
-      assert(isnan(ts_prev_) && isnan(x_ts_prev_));
-      return x_ts_;
+      assert(isnan(t_slow_prev_) && isnan(x_t_slow_prev_));
+      return x_t_slow_;
     } else {
-      assert(!isnan(ts_prev_) && !isnan(x_ts_prev_));
-      (void)tf;
-      // assert(tf >= ts_);
-      // double blend = (tf - ts_) / dt_ts_;
-      // const double y = x_ts_prev_ + blend * (x_ts_ - x_ts_prev_);
+      assert(!isnan(t_slow_prev_) && !isnan(x_t_slow_prev_));
+      (void)t_fast;
+      // assert(t_fast >= t_slow_);
+      // double blend = (t_fast - t_slow_) / dt_slow_;
+      // const double y = x_t_slow_prev_ + blend * (x_t_slow_ - x_t_slow_prev_);
       // assert(blend == 0.0);
-      // assert(y == x_ts_prev_);
+      // assert(y == x_t_slow_prev_);
       // return y;
-      return x_ts_prev_;
-      // return x_ts_;
+      return x_t_slow_prev_;
+      // return x_t_slow_;
     }
   }
 
  private:
   int count_{};
-  double dt_ts_{};
-  double ts_next_{kNaN};
-  double ts_{kNaN};
-  double x_ts_{kNaN};
-  double ts_prev_{kNaN};
-  double x_ts_prev_{kNaN};
+  double dt_slow_{};
+  double t_slow_next_{kNaN};
+  double t_slow_{kNaN};
+  double x_t_slow_{kNaN};
+  double t_slow_prev_{kNaN};
+  double x_t_slow_prev_{kNaN};
 };
 
 int main(int argc, char** argv) {
@@ -134,11 +134,11 @@ int main(int argc, char** argv) {
     const double T = 5.0;
 
     const double freq_slow = 1000.0 / frame_delta;
-    const double dt_ts = 1.0 / freq_slow;
+    const double dt_slow = 1.0 / freq_slow;
 
     std::vector<FirstOrderHold> foh;
     for (int i = 0; i < 7; ++i) {
-      foh.emplace_back(dt_ts);
+      foh.emplace_back(dt_slow);
     }
 
     auto position_callback =
@@ -156,12 +156,14 @@ int main(int argc, char** argv) {
 
       double delta_angle = M_PI / 12.0 / 5 * (1 - std::cos(2 * M_PI / T * time_slow));
 
-      franka::JointPositions output = {{initial_position[0], initial_position[1],
-                                        initial_position[2],
-                                        initial_position[3] + delta_angle,
-                                        initial_position[4],
-                                        initial_position[5],
-                                        initial_position[6]}};
+      franka::JointPositions output = {{
+        initial_position[0],
+        initial_position[1],
+        initial_position[2],
+        initial_position[3] + delta_angle,
+        initial_position[4],
+        initial_position[5],
+        initial_position[6]}};
 
       for (int i = 0; i < 7; ++i) {
         foh[i].Update(time_fast, output.q[i]);
