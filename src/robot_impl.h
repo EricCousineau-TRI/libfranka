@@ -51,8 +51,6 @@ class Robot::Impl : public RobotControl {
 
   Model loadModel() const;
 
-  std::vector<Record> flushLog() { return logger_.flush(); }
-
  protected:
   bool motionGeneratorRunning() const noexcept;
   bool controllerRunning() const noexcept;
