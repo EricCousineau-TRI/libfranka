@@ -10,9 +10,9 @@
 namespace franka {
 
 // Injects a certain amount of delay.
-class Delay {
+class BufferDelay {
  public:
-  Delay(int num_delay) : max_size_(num_delay + 1) {
+  BufferDelay(int num_delay) : max_size_(num_delay + 1) {
     assert(num_delay >= 0);
   }
 

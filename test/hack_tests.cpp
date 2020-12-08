@@ -3,15 +3,15 @@
 #include <franka/hack.h>
 
 using ::testing::ElementsAre;
-using franka::Delay;
+using franka::BufferDelay;
 using franka::FromString;
 
 namespace {
 
 std::vector<double>
-CheckDelay(int num_delay, const std::vector<double> inputs) {
+CheckBufferDelay(int num_delay, const std::vector<double> inputs) {
   std::vector<double> outputs;
-  Delay dut(num_delay);
+  BufferDelay dut(num_delay);
   for (const double u : inputs) {
     const double y = dut.Step(u);
     outputs.push_back(y);
@@ -21,13 +21,13 @@ CheckDelay(int num_delay, const std::vector<double> inputs) {
 
 }
 
-TEST(Hack, TestDelay) {
+TEST(Hack, TestBufferDelay) {
   const std::vector<double> inputs = {1, 2, 3, 4, 5};
-  EXPECT_THAT(CheckDelay(0, inputs), ElementsAre(1, 2, 3, 4, 5));
-  EXPECT_THAT(CheckDelay(1, inputs), ElementsAre(1, 1, 2, 3, 4));
-  EXPECT_THAT(CheckDelay(2, inputs), ElementsAre(1, 1, 1, 2, 3));
-  EXPECT_THAT(CheckDelay(3, inputs), ElementsAre(1, 1, 1, 1, 2));
-  EXPECT_THAT(CheckDelay(4, inputs), ElementsAre(1, 1, 1, 1, 1));
+  EXPECT_THAT(CheckBufferDelay(0, inputs), ElementsAre(1, 2, 3, 4, 5));
+  EXPECT_THAT(CheckBufferDelay(1, inputs), ElementsAre(1, 1, 2, 3, 4));
+  EXPECT_THAT(CheckBufferDelay(2, inputs), ElementsAre(1, 1, 1, 2, 3));
+  EXPECT_THAT(CheckBufferDelay(3, inputs), ElementsAre(1, 1, 1, 1, 2));
+  EXPECT_THAT(CheckBufferDelay(4, inputs), ElementsAre(1, 1, 1, 1, 1));
 }
 
 TEST(Hack, TestFromString) {

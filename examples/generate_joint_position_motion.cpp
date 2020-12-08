@@ -11,7 +11,7 @@
 #include "examples_common.h"
 
 using franka::FromString;
-using franka::Delay;
+using franka::BufferDelay;
 
 /**
  * @example generate_joint_position_motion.cpp
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     const double T = 5.0;
     const double dt = 1e-3;
 
-    Delay delay_3(num_delay);
+    BufferDelay delay_3(num_delay);
 
     auto position_callback =
         [&](const franka::RobotState& robot_state, franka::Duration period)
