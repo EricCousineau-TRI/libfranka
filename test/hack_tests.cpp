@@ -44,8 +44,8 @@ TEST(Hack, TestCsv) {
   log.emplace_back();
   const std::string actual = logToCSV(log);
   const std::string expected = R"""(
-host_time, time, q[0], q[1], q[2], q[3], q[4], q[5], q[6], dq[0], dq[1], dq[2], dq[3], dq[4], dq[5], dq[6], tau_J[0], tau_J[1], tau_J[2], tau_J[3], tau_J[4], tau_J[5], tau_J[6], tau_ext_hat_filtered[0], tau_ext_hat_filtered[1], tau_ext_hat_filtered[2], tau_ext_hat_filtered[3], tau_ext_hat_filtered[4], tau_ext_hat_filtered[5], tau_ext_hat_filtered[6], q_d[0], q_d[1], q_d[2], q_d[3], q_d[4], q_d[5], q_d[6], dq_d[0], dq_d[1], dq_d[2], dq_d[3], dq_d[4], dq_d[5], dq_d[6], q_c[0], q_c[1], q_c[2], q_c[3], q_c[4], q_c[5], q_c[6]
-0, 0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0
+host_time, time, success_rate, q[0], q[1], q[2], q[3], q[4], q[5], q[6], dq[0], dq[1], dq[2], dq[3], dq[4], dq[5], dq[6], tau_J[0], tau_J[1], tau_J[2], tau_J[3], tau_J[4], tau_J[5], tau_J[6], tau_ext_hat_filtered[0], tau_ext_hat_filtered[1], tau_ext_hat_filtered[2], tau_ext_hat_filtered[3], tau_ext_hat_filtered[4], tau_ext_hat_filtered[5], tau_ext_hat_filtered[6], q_d[0], q_d[1], q_d[2], q_d[3], q_d[4], q_d[5], q_d[6], dq_d[0], dq_d[1], dq_d[2], dq_d[3], dq_d[4], dq_d[5], dq_d[6], q_c[0], q_c[1], q_c[2], q_c[3], q_c[4], q_c[5], q_c[6], delta_angle_delayed
+0, 0, 0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0
 )""";
   EXPECT_EQ("\n" + actual, expected);
 }

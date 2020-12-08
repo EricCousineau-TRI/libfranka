@@ -65,6 +65,10 @@ struct HackEntry {
 
   // Commanded (but before low-pass filters / rate limiting).
   std::array<double, 7> q_c;
+
+  // Delay value. Only using this to see if processor is pruning execution
+  // branches?
+  double delta_angle_delayed{};
 };
 
 std::string logToCSV(const std::vector<HackEntry>& log) {
@@ -85,7 +89,8 @@ std::string logToCSV(const std::vector<HackEntry>& log) {
     << csvName(first.tau_ext_hat_filtered, "tau_ext_hat_filtered") << ", "
     << csvName(first.q_d, "q_d") << ", "
     << csvName(first.dq_d, "dq_d") << ", "
-    << csvName(first.q_c, "q_c") << std::endl;
+    << csvName(first.q_c, "q_c") << ", "
+    << "delta_angle_delayed" << std::endl;
   for (const HackEntry& r : log) {
     os
       << r.host_time << ", "
@@ -97,7 +102,8 @@ std::string logToCSV(const std::vector<HackEntry>& log) {
       << r.tau_ext_hat_filtered << ", "
       << r.q_d << ", "
       << r.dq_d << ", "
-      << r.q_c << std::endl;
+      << r.q_c << ", "
+      << r.delta_angle_delayed << std::endl;
   }
   return os.str();
 }

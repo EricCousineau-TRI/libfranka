@@ -24,7 +24,7 @@ using franka::BufferDelay;
 
 int main(int argc, char** argv) {
   if (argc != 4) {
-    std::cerr << "Usage: " << argv[0] << " <robot-hostname> <via-time> <num-delay>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <robot-hostname> {time|buffer} <num-delay>" << std::endl;
     return -1;
   }
   try {
@@ -32,7 +32,16 @@ int main(int argc, char** argv) {
     setDefaultBehavior(robot);
 
     // Inject delay via time (shift reference signal). If false, use a buffer.
-    const bool via_time = FromString<bool>(argv[2]);
+    const std::string delay_style = FromString<std::string>(argv[2]);
+    bool via_time{};
+    if (delay_style == "time") {
+      via_time = true;
+    } else if (delay_style == "buffer") {
+      via_time = false;
+    } else {
+      throw std::runtime_error("Invalid delay style: " + delay_style);
+    }
+
     // Number of ticks to delay.
     const int num_delay = FromString<int>(argv[3]);
 
@@ -66,7 +75,13 @@ int main(int argc, char** argv) {
         ref_time = std::max(0.0, time - dt * num_delay);
       }
 
-      double delta_angle = M_PI / (12.0 * 5) * (1 - std::cos(2 * M_PI / T * ref_time));
+      double delta_angle =
+          M_PI / (12.0 * 5) * (1 - std::cos(2 * M_PI / T * ref_time));
+
+      const double delta_angle_delayed = delay_q3.Step(delta_angle);
+      if (!via_time) {
+        delta_angle = delta_angle_delayed;
+      }
 
       franka::JointPositions output = {{
         initial_position[0],
@@ -76,11 +91,6 @@ int main(int argc, char** argv) {
         initial_position[4],
         initial_position[5],
         initial_position[6]}};
-
-      const double q3_discrete_delay = delay_q3.Step(output.q[3]);
-      if (!via_time) {
-        output.q[3] = q3_discrete_delay;
-      }
 
       // Log. (Not realtime, but meh.)
       franka::HackEntry entry;
@@ -94,6 +104,7 @@ int main(int argc, char** argv) {
       entry.q_d = robot_state.q_d;
       entry.dq_d = robot_state.dq_d;
       entry.q_c = output.q;
+      entry.delta_angle_delayed = delta_angle_delayed;
       log.push_back(entry);
 
       if (time >= T) {
@@ -113,7 +124,8 @@ int main(int argc, char** argv) {
     // Save log file.
     // Expects to be run from `<repo>/build`.
     const std::string log_file =
-        "../tmp/data/delay_" + std::to_string(num_delay) + ".log";
+        "../tmp/data/delay_" + delay_style + "_" +
+        std::to_string(num_delay) + ".log";
     std::ofstream log_stream(log_file.c_str());
     log_stream << franka::logToCSV(log);
     std::cout << "Wrote log: " << log_file << "\n";
