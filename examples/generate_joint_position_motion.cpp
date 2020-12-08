@@ -44,20 +44,23 @@ t_fast[n] - Time at fast frequency
 class FirstOrderHold {
  public:
   FirstOrderHold(double dt_slow)
-      : dt_slow_(dt_slow) {
-    t_slow_next_ = 0.0;
+      // : dt_slow_(dt_slow)
+  {
+    (void)dt_slow;
+    // t_slow_next_ = 0.0;
   }
 
   void Update(double t_fast, double u) {
+    (void)t_fast;
     // if (t_fast + kEps >= t_slow_next_) {
       // Get first order.
-      t_slow_prev_ = t_slow_;
+      // t_slow_prev_ = t_slow_;
       x_t_slow_prev_ = x_t_slow_;
       // Get zero-th order.
-      t_slow_ = t_fast;
+      // t_slow_ = t_fast;
       x_t_slow_ = u;
       // Schedule next update.
-      t_slow_next_ += dt_slow_;
+      // t_slow_next_ += dt_slow_;
       count_ += 1;
     // } else {
     //   // hack!
@@ -66,35 +69,37 @@ class FirstOrderHold {
   }
 
   double CalcOutput(double t_fast) const {
-    // Update must be called before output. (Deviates from Drake in
-    // this respect).
-    assert(!isnan(t_slow_) && !isnan(x_t_slow_));
-    assert(count_ > 0);
+    (void)t_fast;
+    // // Update must be called before output. (Deviates from Drake in
+    // // this respect).
+    // assert(!isnan(t_slow_) && !isnan(x_t_slow_));
     if (count_ == 1) {
-      assert(isnan(t_slow_prev_) && isnan(x_t_slow_prev_));
+    //   assert(isnan(t_slow_prev_) && isnan(x_t_slow_prev_));
+      return x_t_slow_;
+    } else if (count_ > 1) {
+    //   assert(!isnan(t_slow_prev_) && !isnan(x_t_slow_prev_));
+    //   (void)t_fast;
+    //   // assert(t_fast >= t_slow_);
+    //   // double blend = (t_fast - t_slow_) / dt_slow_;
+    //   // const double y = x_t_slow_prev_ + blend * (x_t_slow_ - x_t_slow_prev_);
+    //   // assert(blend == 0.0);
+    //   // assert(y == x_t_slow_prev_);
+    //   // return y;
+      // return x_t_slow_prev_;
       return x_t_slow_;
     } else {
-      assert(!isnan(t_slow_prev_) && !isnan(x_t_slow_prev_));
-      (void)t_fast;
-      // assert(t_fast >= t_slow_);
-      // double blend = (t_fast - t_slow_) / dt_slow_;
-      // const double y = x_t_slow_prev_ + blend * (x_t_slow_ - x_t_slow_prev_);
-      // assert(blend == 0.0);
-      // assert(y == x_t_slow_prev_);
-      // return y;
-      return x_t_slow_prev_;
-      // return x_t_slow_;
+      assert(false);
     }
   }
 
  private:
   int count_{};
-  double dt_slow_{};
-  double t_slow_next_{kNaN};
-  double t_slow_{kNaN};
-  double x_t_slow_{kNaN};
-  double t_slow_prev_{kNaN};
-  double x_t_slow_prev_{kNaN};
+  // double dt_slow_{};
+  // double t_slow_next_{kNaN};
+  // double t_slow_{kNaN};
+  double x_t_slow_{0.0};
+  // double t_slow_prev_{kNaN};
+  double x_t_slow_prev_{0.0};
 };
 
 int main(int argc, char** argv) {
@@ -164,8 +169,8 @@ int main(int argc, char** argv) {
 
       {
         foh_3.Update(time_fast, output.q[3]);
-        // const double q3 = foh_3.CalcOutput(time_fast);
-        // output.q[3] = q3;
+        const double q3 = foh_3.CalcOutput(time_fast);
+        output.q[3] = q3;
       }
 
       if (time_slow >= T) {
