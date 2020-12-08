@@ -86,6 +86,7 @@ int main(int argc, char** argv) {
       franka::HackEntry entry;
       entry.host_time = franka::CurrentTimeSeconds();
       entry.time = time;
+      entry.success_rate = robot_state.control_command_success_rate;
       entry.q = robot_state.q;
       entry.dq = robot_state.dq;
       entry.tau_J = robot_state.tau_J;

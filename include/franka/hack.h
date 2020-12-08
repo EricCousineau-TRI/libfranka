@@ -52,6 +52,7 @@ struct HackEntry {
 
   // From robot state. Resolution is only milliseconds.
   double time{};
+  double success_rate{};
 
   // Measured.
   std::array<double, 7> q;
@@ -77,6 +78,7 @@ std::string logToCSV(const std::vector<HackEntry>& log) {
     << std::setprecision(std::numeric_limits<double>::digits10 + 1)
     << "host_time, "
     << "time, "
+    << "success_rate, "
     << csvName(first.q, "q") << ", "
     << csvName(first.dq, "dq") << ", "
     << csvName(first.tau_J, "tau_J") << ", "
@@ -88,6 +90,7 @@ std::string logToCSV(const std::vector<HackEntry>& log) {
     os
       << r.host_time << ", "
       << r.time << ", "
+      << r.success_rate << ", "
       << r.q << ", "
       << r.dq << ", "
       << r.tau_J << ", "
