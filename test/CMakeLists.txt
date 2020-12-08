@@ -33,23 +33,24 @@ list(APPEND TEST_DEPENDENCIES fcimodels)
 
 ## Test runner
 add_executable(run_all_tests
-  calculations_tests.cpp
-  control_loop_tests.cpp
-  control_types_tests.cpp
-  duration_tests.cpp
-  errors_tests.cpp
-  gripper_command_tests.cpp
-  gripper_tests.cpp
-  helpers.cpp
-  logger_tests.cpp
-  lowpass_filter_tests.cpp
-  mock_server.cpp
-  model_tests.cpp
-  rate_limiting_tests.cpp
-  robot_command_tests.cpp
-  robot_impl_tests.cpp
-  robot_state_tests.cpp
-  robot_tests.cpp
+  # calculations_tests.cpp
+  # control_loop_tests.cpp
+  # control_types_tests.cpp
+  # duration_tests.cpp
+  # errors_tests.cpp
+  # gripper_command_tests.cpp
+  # gripper_tests.cpp
+  hack_tests.cpp
+  # helpers.cpp
+  # logger_tests.cpp
+  # lowpass_filter_tests.cpp
+  # mock_server.cpp
+  # model_tests.cpp
+  # rate_limiting_tests.cpp
+  # robot_command_tests.cpp
+  # robot_impl_tests.cpp
+  # robot_state_tests.cpp
+  # robot_tests.cpp
 )
 
 set(TEST_COMPILE_DEFINITIONS FRANKA_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")

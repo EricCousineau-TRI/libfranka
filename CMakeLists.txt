@@ -57,6 +57,7 @@ add_library(franka SHARED
   src/exception.cpp
   src/gripper.cpp
   src/gripper_state.cpp
+  src/hack.cpp
   src/library_downloader.cpp
   src/library_loader.cpp
   src/load_calculations.cpp
