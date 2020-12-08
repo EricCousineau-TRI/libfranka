@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include <chrono>
+#include <iomanip>
 #include <queue>
 #include <sstream>
 #include <vector>
@@ -73,6 +74,7 @@ std::string logToCSV(const std::vector<HackEntry>& log) {
   const auto& first = log.front();
   std::ostringstream os;
   os
+    << std::setprecision(std::numeric_limits<double>::digits10 + 1)
     << "host_time, "
     << "time, "
     << csvName(first.q, "q") << ", "

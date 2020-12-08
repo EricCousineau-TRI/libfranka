@@ -1,8 +1,10 @@
 // Copyright (c) 2017 Franka Emika GmbH
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
 #include <cmath>
-#include <iostream>
+
 #include <fstream>
+#include <iostream>
+#include <thread>
 
 #include <franka/exception.h>
 #include <franka/robot.h>
@@ -21,8 +23,8 @@ using franka::BufferDelay;
  */
 
 int main(int argc, char** argv) {
-  if (argc != 5) {
-    std::cerr << "Usage: " << argv[0] << " <robot-hostname> <via-time> <keep-latest> <num-delay>" << std::endl;
+  if (argc != 4) {
+    std::cerr << "Usage: " << argv[0] << " <robot-hostname> <via-time> <num-delay>" << std::endl;
     return -1;
   }
   try {
@@ -31,24 +33,23 @@ int main(int argc, char** argv) {
 
     // Inject delay via time (shift reference signal). If false, use a buffer.
     const bool via_time = FromString<bool>(argv[2]);
-    // Regardless of computation, still keep the latest reference signal (only used if via_time=false).
-    const bool keep_latest = FromString<bool>(argv[3]);
     // Number of ticks to delay.
-    const int num_delay = FromString<int>(argv[4]);
+    const int num_delay = FromString<int>(argv[3]);
 
     // First move the robot to a suitable joint configuration
     std::array<double, 7> q_goal = {{0, -M_PI_4 / 2, 0, -3 * M_PI_4 / 2, 0, M_PI_2, M_PI_4}};
     MotionGenerator motion_generator(0.5, q_goal);
     robot.control(motion_generator);
     std::cout << "Finished moving to initial joint configuration." << std::endl;
+    std::cout << "Waiting to settle (0.5s)..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(500));
 
     std::array<double, 7> initial_position;
     double time = 0.0;
     const double T = 5.0;
     const double dt = 1e-3;
 
-    BufferDelay delay_3(num_delay);
-
+    BufferDelay delay_q3(num_delay);
     std::vector<franka::HackEntry> log;
 
     auto position_callback =
@@ -76,16 +77,12 @@ int main(int argc, char** argv) {
         initial_position[5],
         initial_position[6]}};
 
+      const double q3_discrete_delay = delay_q3.Step(output.q[3]);
       if (!via_time) {
-        // Store discrete values (discrete-time transfer function delay).
-        const double q3 = delay_3.Step(output.q[3]);
-        if (!keep_latest) {
-          output.q[3] = q3;
-        }
+        output.q[3] = q3_discrete_delay;
       }
 
-      // Log.
-      // (Not realtime, but meh.)
+      // Log. (Not realtime, but meh.)
       franka::HackEntry entry;
       entry.host_time = franka::CurrentTimeSeconds();
       entry.time = time;
@@ -105,6 +102,7 @@ int main(int argc, char** argv) {
       return output;
     };
 
+    std::cout << "Running" << std::endl;
     try {
       robot.control(position_callback);
     } catch (const franka::ControlException& e) {
@@ -112,8 +110,9 @@ int main(int argc, char** argv) {
     }
 
     // Save log file.
+    // Expects to be run from `<repo>/build`.
     const std::string log_file =
-        "/home/eacousineau/data/panda/interp/delay_" + std::to_string(num_delay) + ".log";
+        "../tmp/data/delay_" + std::to_string(num_delay) + ".log";
     std::ofstream log_stream(log_file.c_str());
     log_stream << franka::logToCSV(log);
     std::cout << "Wrote log: " << log_file << "\n";
