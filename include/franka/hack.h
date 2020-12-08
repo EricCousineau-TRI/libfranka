@@ -4,6 +4,7 @@
 
 #include <cassert>
 
+#include <chrono>
 #include <queue>
 #include <sstream>
 #include <vector>
@@ -94,6 +95,11 @@ std::string logToCSV(const std::vector<HackEntry>& log) {
       << r.q_c << std::endl;
   }
   return os.str();
+}
+
+double CurrentTimeSeconds() {
+  return std::chrono::duration<double>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 }  // namespace franka

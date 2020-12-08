@@ -4,6 +4,7 @@
 
 using ::testing::ElementsAre;
 using franka::BufferDelay;
+using franka::CurrentTimeSeconds;
 using franka::FromString;
 using franka::HackEntry;
 using franka::logToCSV;
@@ -47,4 +48,8 @@ host_time, time, q[0], q[1], q[2], q[3], q[4], q[5], q[6], dq[0], dq[1], dq[2], 
 0, 0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0
 )""";
   EXPECT_EQ("\n" + actual, expected);
+}
+
+TEST(Hack, TestCurrentTimeSeconds) {
+  EXPECT_GE(CurrentTimeSeconds(), 0.0);
 }

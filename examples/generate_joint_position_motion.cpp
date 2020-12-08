@@ -40,7 +40,6 @@ int main(int argc, char** argv) {
     std::array<double, 7> q_goal = {{0, -M_PI_4 / 2, 0, -3 * M_PI_4 / 2, 0, M_PI_2, M_PI_4}};
     MotionGenerator motion_generator(0.5, q_goal);
     robot.control(motion_generator);
-    robot.flushLog();
     std::cout << "Finished moving to initial joint configuration." << std::endl;
 
     std::array<double, 7> initial_position;
@@ -49,6 +48,8 @@ int main(int argc, char** argv) {
     const double dt = 1e-3;
 
     BufferDelay delay_3(num_delay);
+
+    std::vector<franka::HackEntry> log;
 
     auto position_callback =
         [&](const franka::RobotState& robot_state, franka::Duration period)
@@ -83,6 +84,20 @@ int main(int argc, char** argv) {
         }
       }
 
+      // Log.
+      // (Not realtime, but meh.)
+      franka::HackEntry entry;
+      entry.host_time = franka::CurrentTimeSeconds();
+      entry.time = time;
+      entry.q = robot_state.q;
+      entry.dq = robot_state.dq;
+      entry.tau_J = robot_state.tau_J;
+      entry.tau_ext_hat_filtered = robot_state.tau_ext_hat_filtered;
+      entry.q_d = robot_state.q_d;
+      entry.dq_d = robot_state.dq_d;
+      entry.q_c = output.q;
+      log.push_back(entry);
+
       if (time >= T) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
         return franka::MotionFinished(output);
@@ -90,17 +105,10 @@ int main(int argc, char** argv) {
       return output;
     };
 
-    std::vector<franka::Record> log;
     try {
       robot.control(position_callback);
     } catch (const franka::ControlException& e) {
       std::cout << "ControlException: " << e.what() << std::endl;
-      log = e.log;
-    }
-
-    if (log.size() == 0) {
-      // No error was triggered, but still get the most recent log.
-      log = robot.flushLog();
     }
 
     // Save log file.
