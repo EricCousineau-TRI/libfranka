@@ -1,17 +1,17 @@
-#undef NDEBUG
-
 // Copyright (c) 2017 Franka Emika GmbH
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include <queue>
-#include <sstream>
 
 #include <franka/exception.h>
 #include <franka/robot.h>
+#include <franka/hack.h>
 
 #include "examples_common.h"
+
+using franka::FromString;
+using franka::Delay;
 
 /**
  * @example generate_joint_position_motion.cpp
@@ -19,39 +19,6 @@
  *
  * @warning Before executing this example, make sure there is enough space in front of the robot.
  */
-
-// Injects a certain amount of delay.
-class Delay {
- public:
-  Delay(int num_delay) : max_size_(num_delay + 1) {
-    assert(num_delay >= 0);
-  }
-
-  void Update(double u) {
-    if (buffer_.size() == max_size_) {
-      buffer_.pop();
-    }
-    buffer_.push(u);
-    assert(buffer_.size() <= max_size_);
-  }
-
-  double CalcOutput() const {
-    return buffer_.front();
-  }
-
- private:
-  size_t max_size_;
-  std::queue<double> buffer_;
-};
-
-template <typename T>
-T FromString(const std::string& s) {
-  std::istringstream ss(s);
-  T value{};
-  ss >> value;
-  assert(!ss.fail());
-  return value;
-}
 
 int main(int argc, char** argv) {
   if (argc != 5) {
@@ -110,8 +77,7 @@ int main(int argc, char** argv) {
 
       if (!via_time) {
         // Store discrete values (discrete-time transfer function delay).
-        delay_3.Update(output.q[3]);
-        const double q3 = delay_3.CalcOutput();
+        const double q3 = delay_3.Step(output.q[3]);
         if (!keep_latest) {
           output.q[3] = q3;
         }
