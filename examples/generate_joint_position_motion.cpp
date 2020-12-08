@@ -48,9 +48,7 @@ class FirstOrderHold {
     ts_next_ = 0.0;
   }
 
-  void Update(double tf, double u, bool print = false) {
-    if (print) std::cout << "update: " << tf << std::endl;
-
+  void Update(double tf, double u) {
     if (tf + kEps >= ts_next_) {
       // Get first order.
       ts_prev_ = ts_;
@@ -60,14 +58,10 @@ class FirstOrderHold {
       x_ts_ = u;
       // Schedule next update.
       ts_next_ += dt_ts_;
-      if (print) std::cout << "  store, ts_next = " << ts_next_ << std::endl;
-    } else {
-      std::cout << "  crap  " << (tf + kEps) - ts_next_ << "\n";
-      assert(false);
     }
   }
 
-  double CalcOutput(double tf, bool print = false) const {
+  double CalcOutput(double tf) const {
     // Update must be called before output. (Deviates from Drake in
     // this respect).
     assert(!isnan(ts_));
@@ -79,7 +73,6 @@ class FirstOrderHold {
       assert(!isnan(x_ts_prev_));
       assert(tf >= ts_);
       double blend = (tf - ts_) / dt_ts_;
-      if (print) std::cout << "blend: " << blend << "\n";
       const double y = x_ts_prev_ + blend * (x_ts_ - x_ts_prev_);
       assert(blend == 0.0);
       assert(y == x_ts_prev_);
@@ -113,6 +106,7 @@ int main(int argc, char** argv) {
               << "Press Enter to continue..." << std::endl;
     std::cin.ignore();
     robot.control(motion_generator);
+    robot.flushLog();
     std::cout << "Finished moving to initial joint configuration." << std::endl;
 
     // Set additional parameters always before the control loop, NEVER in the control loop!
@@ -156,38 +150,16 @@ int main(int argc, char** argv) {
       franka::JointPositions output = {{initial_position[0], initial_position[1],
                                         initial_position[2],
                                         initial_position[3] + delta_angle,
-                                        initial_position[4],// + delta_angle,
+                                        initial_position[4],
                                         initial_position[5],
-                                        initial_position[6]}};// + delta_angle}};
-
-      // // Hack in rate limit.
-      // for (int i = 0; i < 7; ++i) {
-      //   const double max_vel = 2;
-      //   const double max_accel = 30;
-      //   const double max_jerk = 10000;
-      //   output.q[i] = franka::limitRate(
-      //       max_vel,
-      //       max_accel,
-      //       max_jerk,
-      //       output.q[i],
-      //       robot_state.q_d[i],
-      //       robot_state.dq_d[i],
-      //       robot_state.ddq_d[i]);
-      // }
+                                        initial_position[6]}};
 
       for (int i = 0; i < 7; ++i) {
-        const bool print = true; //(i == 3);
-        foh[i].Update(time_fast, output.q[i], print);
-        const double tmp = foh[i].CalcOutput(time_fast, print);
-        if (print) {
-          std::cout << "q[" << i << "]\n"
-              << "  actual: " << output.q[i] << "\n"
-              << "  foh: " << tmp << "\n";
-        }
+        foh[i].Update(time_fast, output.q[i]);
+        // const double tmp = foh[i].CalcOutput(time_fast);
         // output.q[i] = tmp;
       }
 
-      std::cout << "---\n";
       if (time_slow >= T) {
         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
         return franka::MotionFinished(output);
@@ -196,9 +168,7 @@ int main(int argc, char** argv) {
     };
     const franka::ControllerMode controller_mode =
         franka::ControllerMode::kJointImpedance;
-    // const bool limit_rate = true;
-    // const double cutoftf_freq = 1;
-    robot.control(position_callback, controller_mode); //, limit_rate, cutoftf_freq);
+    robot.control(position_callback, controller_mode);
 
     // I can haz log.
     const std::string log_file = "/tmp/panda.log";
