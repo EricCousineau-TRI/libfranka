@@ -44,22 +44,30 @@ class Delay {
   std::queue<double> buffer_;
 };
 
+template <typename T>
+T FromString(const std::string& s) {
+  std::istringstream ss(s);
+  T value{};
+  ss >> value;
+  assert(!ss.fail());
+  return value;
+}
+
 int main(int argc, char** argv) {
-  if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " <robot-hostname> <num-delay>" << std::endl;
+  if (argc != 5) {
+    std::cerr << "Usage: " << argv[0] << " <robot-hostname> <via-time> <keep-latest> <num-delay>" << std::endl;
     return -1;
   }
   try {
     franka::Robot robot(argv[1], franka::RealtimeConfig::kIgnore);
     setDefaultBehavior(robot);
 
-    int num_delay{};
-    {
-      std::istringstream ss(argv[2]);
-      ss >> num_delay;
-      assert(!ss.fail());
-    }
-    std::cout << "num_delay: " << num_delay << "\n";
+    // Inject delay via time (shift reference signal). If false, use a buffer.
+    const bool via_time = FromString<bool>(argv[2]);
+    // Regardless of computation, still keep the latest reference signal (only used if via_time=false).
+    const bool keep_latest = FromString<bool>(argv[3]);
+    // Number of ticks to delay.
+    const int num_delay = FromString<int>(argv[4]);
 
     // First move the robot to a suitable joint configuration
     std::array<double, 7> q_goal = {{0, -M_PI_4 / 2, 0, -3 * M_PI_4 / 2, 0, M_PI_2, M_PI_4}};
@@ -68,17 +76,10 @@ int main(int argc, char** argv) {
     robot.flushLog();
     std::cout << "Finished moving to initial joint configuration." << std::endl;
 
-    // Set additional parameters always before the control loop, NEVER in the control loop!
-    // Set collision behavior.
-    robot.setCollisionBehavior(
-        {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
-        {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
-        {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}},
-        {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}});
-
     std::array<double, 7> initial_position;
     double time = 0.0;
     const double T = 5.0;
+    const double dt = 1e-3;
 
     Delay delay_3(num_delay);
 
@@ -90,7 +91,13 @@ int main(int argc, char** argv) {
         initial_position = robot_state.q_d;
       }
 
-      double delta_angle = M_PI / (12.0 * 5) * (1 - std::cos(2 * M_PI / T * time));
+      double ref_time = time;
+      if (via_time) {
+        // Inject saturated delay (continuous-time transfer function delay).
+        ref_time = std::max(0.0, time - dt * num_delay);
+      }
+
+      double delta_angle = M_PI / (12.0 * 5) * (1 - std::cos(2 * M_PI / T * ref_time));
 
       franka::JointPositions output = {{
         initial_position[0],
@@ -101,10 +108,13 @@ int main(int argc, char** argv) {
         initial_position[5],
         initial_position[6]}};
 
-      {
+      if (!via_time) {
+        // Store discrete values (discrete-time transfer function delay).
         delay_3.Update(output.q[3]);
         const double q3 = delay_3.CalcOutput();
-        output.q[3] = q3;
+        if (!keep_latest) {
+          output.q[3] = q3;
+        }
       }
 
       if (time >= T) {
