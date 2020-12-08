@@ -64,7 +64,11 @@ int main(int argc, char** argv) {
     auto position_callback =
         [&](const franka::RobotState& robot_state, franka::Duration period)
           -> franka::JointPositions {
-      time += period.toSec();
+      // time += period.toSec();
+      if (period.toSec() > 0) {
+        time += dt;
+      }
+
       if (time == 0.0) {
         initial_position = robot_state.q_d;
       }
