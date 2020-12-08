@@ -1,4 +1,5 @@
 #undef NDEBUG
+
 // Copyright (c) 2017 Franka Emika GmbH
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
 #include <cmath>
@@ -49,7 +50,7 @@ class FirstOrderHold {
   }
 
   void Update(double tf, double u) {
-    if (tf + kEps >= ts_next_) {
+    // if (tf + kEps >= ts_next_) {
       // Get first order.
       ts_prev_ = ts_;
       x_ts_prev_ = x_ts_;
@@ -58,7 +59,10 @@ class FirstOrderHold {
       x_ts_ = u;
       // Schedule next update.
       ts_next_ += dt_ts_;
-    }
+    // } else {
+    //   // hack!
+    //   assert(false);
+    // }
   }
 
   double CalcOutput(double tf) const {
@@ -76,7 +80,9 @@ class FirstOrderHold {
       const double y = x_ts_prev_ + blend * (x_ts_ - x_ts_prev_);
       assert(blend == 0.0);
       assert(y == x_ts_prev_);
-      return y;
+      // return y;
+      return x_ts_prev_;
+      // return x_ts_;
     }
   }
 
@@ -156,8 +162,8 @@ int main(int argc, char** argv) {
 
       for (int i = 0; i < 7; ++i) {
         foh[i].Update(time_fast, output.q[i]);
-        // const double tmp = foh[i].CalcOutput(time_fast);
-        // output.q[i] = tmp;
+        const double tmp = foh[i].CalcOutput(time_fast);
+        output.q[i] = tmp;
       }
 
       if (time_slow >= T) {
