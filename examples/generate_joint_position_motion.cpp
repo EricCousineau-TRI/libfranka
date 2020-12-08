@@ -38,7 +38,6 @@ Output (high_freq):
     y[t_fast] = x[t_slow_prev] + (t_fast - t_slow) / dt_slow * (x[t_slow] - x[t_slow_prev])
 
 dt_slow - Slow frequency (seconds)
-dt_f - Fast frequency (seconds)
 t_slow[n] - Time at slow frequency
 t_fast[n] - Time at fast frequency
 */
@@ -128,27 +127,25 @@ int main(int argc, char** argv) {
 
     std::array<double, 7> initial_position;
     double time_fast = 0.0;
-    double time_slow = 0.0;
-    const int frame_delta = 1;
-    int frame_count = 0;
+    // double time_slow = 0.0;
+    // const int frame_delta = 1;
+    // int frame_count = 0;
     const double T = 5.0;
 
-    const double freq_slow = 1000.0 / frame_delta;
+    const double freq_slow = 1000.0; // / frame_delta;
     const double dt_slow = 1.0 / freq_slow;
 
-    std::vector<FirstOrderHold> foh;
-    for (int i = 0; i < 7; ++i) {
-      foh.emplace_back(dt_slow);
-    }
+    FirstOrderHold foh_3(dt_slow);
 
     auto position_callback =
         [&](const franka::RobotState& robot_state, franka::Duration period)
           -> franka::JointPositions {
       time_fast += period.toSec();
-      if (frame_count % frame_delta == 0) {
-        time_slow = time_fast;
-      }
-      frame_count += 1;
+      const double time_slow = time_fast;
+      // if (frame_count % frame_delta == 0) {
+      //   time_slow = time_fast;
+      // }
+      // frame_count += 1;
 
       if (time_fast == 0.0) {
         initial_position = robot_state.q_d;
@@ -165,10 +162,10 @@ int main(int argc, char** argv) {
         initial_position[5],
         initial_position[6]}};
 
-      for (int i = 0; i < 7; ++i) {
-        foh[i].Update(time_fast, output.q[i]);
-        const double tmp = foh[i].CalcOutput(time_fast);
-        output.q[i] = tmp;
+      {
+        foh_3.Update(time_fast, output.q[3]);
+        // const double q3 = foh_3.CalcOutput(time_fast);
+        // output.q[3] = q3;
       }
 
       if (time_slow >= T) {
