@@ -6,14 +6,18 @@ if [[ $0 == "-bash" ]]; then
 fi
 set -eux
 
-if [[ ! -d ./venv ]]; then
+script_dir=$(cd $(dirname $0) && pwd)
+
+if [[ ! -d ${script_dir}/venv ]]; then
+(
+    cd ${script_dir}
     python3 -m venv ./venv
     ./venv/bin/pip install -U wheel pip
     ./venv/bin/pip install -r ./requirements.txt
+)
 fi
 
-cd $(dirname $0)
 set +eux
-source ./venv/bin/activate
+source ${script_dir}/venv/bin/activate
 set -x
 exec $@
