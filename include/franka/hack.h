@@ -6,6 +6,9 @@
 
 #include <queue>
 #include <sstream>
+#include <vector>
+
+#include <franka/log.h>
 
 namespace franka {
 
@@ -39,6 +42,58 @@ T FromString(const std::string& s) {
   ss >> value;
   assert(!ss.fail());
   return value;
+}
+
+struct HackEntry {
+  // Host time.
+  double host_time{};
+
+  // From robot state. Resolution is only milliseconds.
+  double time{};
+
+  // Measured.
+  std::array<double, 7> q;
+  std::array<double, 7> dq;
+  std::array<double, 7> tau_J;
+  std::array<double, 7> tau_ext_hat_filtered;
+  // From robot state.
+  std::array<double, 7> q_d;
+  std::array<double, 7> dq_d;
+
+  // Commanded (but before low-pass filters / rate limiting).
+  std::array<double, 7> q_c;
+};
+
+std::string logToCSV(const std::vector<HackEntry>& log) {
+  using internal::csvName;
+  using internal::operator<<;
+
+  assert(log.size() > 0);
+  const auto& first = log.front();
+  std::ostringstream os;
+  os
+    << "host_time, "
+    << "time, "
+    << csvName(first.q, "q") << ", "
+    << csvName(first.dq, "dq") << ", "
+    << csvName(first.tau_J, "tau_J") << ", "
+    << csvName(first.tau_ext_hat_filtered, "tau_ext_hat_filtered") << ", "
+    << csvName(first.q_d, "q_d") << ", "
+    << csvName(first.dq_d, "dq_d") << ", "
+    << csvName(first.q_c, "q_c") << std::endl;
+  for (const HackEntry& r : log) {
+    os
+      << r.host_time << ", "
+      << r.time << ", "
+      << r.q << ", "
+      << r.dq << ", "
+      << r.tau_J << ", "
+      << r.tau_ext_hat_filtered << ", "
+      << r.q_d << ", "
+      << r.dq_d << ", "
+      << r.q_c << std::endl;
+  }
+  return os.str();
 }
 
 }  // namespace franka

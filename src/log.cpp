@@ -2,7 +2,6 @@
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
 #include <franka/log.h>
 
-#include <iterator>
 #include <sstream>
 
 using namespace std::string_literals;  // NOLINT(google-build-using-namespace)
@@ -11,22 +10,8 @@ namespace franka {
 
 namespace {
 
-template <typename T, size_t N>
-std::string csvName(const std::array<T, N>& /*unused*/, const std::string& name) {
-  std::ostringstream os;
-  for (size_t i = 0; i < N - 1; i++) {
-    os << name << "[" << i << "], ";
-  }
-  os << name << "[" << N - 1 << "]";
-  return os.str();
-}
-
-template <class T, size_t N>
-std::ostream& operator<<(std::ostream& ostream /*unused*/, const std::array<T, N>& array) {
-  std::copy(array.cbegin(), array.cend() - 1, std::ostream_iterator<T>(ostream, ","));
-  std::copy(array.cend() - 1, array.cend(), std::ostream_iterator<T>(ostream));
-  return ostream;
-}
+using internal::csvName;
+using internal::operator<<;
 
 std::string csvRobotStateHeader() {
   RobotState robot_state;
