@@ -116,7 +116,18 @@ int main(int argc, char** argv) {
 
     std::cout << "Running" << std::endl;
     try {
-      robot.control(position_callback);
+      // const franka::ControllerMode controller_mode =
+      //     franka::ControllerMode::kJointImpedance;
+      // // Disable filtering.
+      // const bool limit_rate = false;
+      // const double cutoff_frequency = franka::kMaxCutoffFrequency;
+      // Run.
+      robot.control(
+          position_callback
+      );
+          // controller_mode,
+          // limit_rate,
+          // cutoff_frequency);
     } catch (const franka::ControlException& e) {
       std::cout << "ControlException: " << e.what() << std::endl;
     }
