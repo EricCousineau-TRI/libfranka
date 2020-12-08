@@ -59,6 +59,7 @@ class FirstOrderHold {
       x_ts_ = u;
       // Schedule next update.
       ts_next_ += dt_ts_;
+      count_ += 1;
     // } else {
     //   // hack!
     //   assert(false);
@@ -68,18 +69,19 @@ class FirstOrderHold {
   double CalcOutput(double tf) const {
     // Update must be called before output. (Deviates from Drake in
     // this respect).
-    assert(!isnan(ts_));
-    assert(!isnan(x_ts_));
-    if (isnan(ts_prev_)) {
-      assert(isnan(x_ts_prev_));
+    assert(!isnan(ts_) && !isnan(x_ts_));
+    assert(count_ > 0);
+    if (count_ == 1) {
+      assert(isnan(ts_prev_) && isnan(x_ts_prev_));
       return x_ts_;
     } else {
-      assert(!isnan(x_ts_prev_));
-      assert(tf >= ts_);
-      double blend = (tf - ts_) / dt_ts_;
-      const double y = x_ts_prev_ + blend * (x_ts_ - x_ts_prev_);
-      assert(blend == 0.0);
-      assert(y == x_ts_prev_);
+      assert(!isnan(ts_prev_) && !isnan(x_ts_prev_));
+      (void)tf;
+      // assert(tf >= ts_);
+      // double blend = (tf - ts_) / dt_ts_;
+      // const double y = x_ts_prev_ + blend * (x_ts_ - x_ts_prev_);
+      // assert(blend == 0.0);
+      // assert(y == x_ts_prev_);
       // return y;
       return x_ts_prev_;
       // return x_ts_;
@@ -87,6 +89,7 @@ class FirstOrderHold {
   }
 
  private:
+  int count_{};
   double dt_ts_{};
   double ts_next_{kNaN};
   double ts_{kNaN};
@@ -107,10 +110,10 @@ int main(int argc, char** argv) {
     // First move the robot to a suitable joint configuration
     std::array<double, 7> q_goal = {{0, -M_PI_4 / 2, 0, -3 * M_PI_4 / 2, 0, M_PI_2, M_PI_4}};
     MotionGenerator motion_generator(0.5, q_goal);
-    std::cout << "WARNING: This example will move the robot! "
-              << "Please make sure to have the user stop button at hand!" << std::endl
-              << "Press Enter to continue..." << std::endl;
-    std::cin.ignore();
+    // std::cout << "WARNING: This example will move the robot! "
+    //           << "Please make sure to have the user stop button at hand!" << std::endl
+    //           << "Press Enter to continue..." << std::endl;
+    // std::cin.ignore();
     robot.control(motion_generator);
     robot.flushLog();
     std::cout << "Finished moving to initial joint configuration." << std::endl;
