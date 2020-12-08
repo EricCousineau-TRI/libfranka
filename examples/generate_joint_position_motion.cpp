@@ -24,82 +24,31 @@ const double kNaN = std::numeric_limits<double>::quiet_NaN();
 using std::isnan;
 const double kEps = 1e-6;
 
-/*
-Inputs (slow_freq):
-  u[t_slow]
-
-State (slow_freq):
-  x[t_slow_prev], x[t_slow]
-
-Output (high_freq):
-  if any uninitialized x:
-    y[t_fast] = x[t_slow]
-  else:
-    y[t_fast] = x[t_slow_prev] + (t_fast - t_slow) / dt_slow * (x[t_slow] - x[t_slow_prev])
-
-dt_slow - Slow frequency (seconds)
-t_slow[n] - Time at slow frequency
-t_fast[n] - Time at fast frequency
-*/
-class FirstOrderHold {
+class Delay {
  public:
-  FirstOrderHold(double dt_slow)
-      // : dt_slow_(dt_slow)
-  {
-    (void)dt_slow;
-    // t_slow_next_ = 0.0;
+  Delay(int num_delay){
+    assert(num_delay > 0);
+    buffer_.resize(num_delay);
+    ring_size_ = 0;
+    ring_front_ = -1;
   }
 
-  void Update(double t_fast, double u) {
-    (void)t_fast;
-    // if (t_fast + kEps >= t_slow_next_) {
-      // Get first order.
-      // t_slow_prev_ = t_slow_;
-      x_t_slow_prev_ = x_t_slow_;
-      // Get zero-th order.
-      // t_slow_ = t_fast;
-      x_t_slow_ = u;
-      // Schedule next update.
-      // t_slow_next_ += dt_slow_;
-      count_ += 1;
-    // } else {
-    //   // hack!
-    //   assert(false);
-    // }
+  void Update(double u) {
+    ring_front_ = (ring_front_ + 1) % buffer_.size();
+    ring_size_ = std::min(buffer_.size(), ring_size_ + 1);
+    buffer_[ring_front_] = u;
   }
 
-  double CalcOutput(double t_fast) const {
-    (void)t_fast;
-    // // Update must be called before output. (Deviates from Drake in
-    // // this respect).
-    // assert(!isnan(t_slow_) && !isnan(x_t_slow_));
-    if (count_ == 1) {
-    //   assert(isnan(t_slow_prev_) && isnan(x_t_slow_prev_));
-      return x_t_slow_;
-    } else if (count_ > 1) {
-    //   assert(!isnan(t_slow_prev_) && !isnan(x_t_slow_prev_));
-    //   (void)t_fast;
-    //   // assert(t_fast >= t_slow_);
-    //   // double blend = (t_fast - t_slow_) / dt_slow_;
-    //   // const double y = x_t_slow_prev_ + blend * (x_t_slow_ - x_t_slow_prev_);
-    //   // assert(blend == 0.0);
-    //   // assert(y == x_t_slow_prev_);
-    //   // return y;
-      // return x_t_slow_prev_;
-      return x_t_slow_;
-    } else {
-      assert(false);
-    }
+  double CalcOutput() const {
+    assert(ring_size_ > 0);
+    size_t ring_end_ = (ring_front_ + ring_size_ - 1) % buffer_.size();
+    return buffer_[ring_end_];
   }
 
  private:
-  int count_{};
-  // double dt_slow_{};
-  // double t_slow_next_{kNaN};
-  // double t_slow_{kNaN};
-  double x_t_slow_{0.0};
-  // double t_slow_prev_{kNaN};
-  double x_t_slow_prev_{0.0};
+  size_t ring_size_{};
+  size_t ring_front_{};
+  std::vector<double> buffer_;
 };
 
 int main(int argc, char** argv) {
@@ -137,10 +86,10 @@ int main(int argc, char** argv) {
     // int frame_count = 0;
     const double T = 5.0;
 
-    const double freq_slow = 1000.0; // / frame_delta;
-    const double dt_slow = 1.0 / freq_slow;
+    // const double freq_slow = 1000.0; // / frame_delta;
+    // const double dt_slow = 1.0 / freq_slow;
 
-    FirstOrderHold foh_3(dt_slow);
+    Delay delay_3(10);
 
     auto position_callback =
         [&](const franka::RobotState& robot_state, franka::Duration period)
@@ -168,8 +117,8 @@ int main(int argc, char** argv) {
         initial_position[6]}};
 
       {
-        foh_3.Update(time_fast, output.q[3]);
-        const double q3 = foh_3.CalcOutput(time_fast);
+        delay_3.Update(output.q[3]);
+        const double q3 = delay_3.CalcOutput();
         output.q[3] = q3;
       }
 
